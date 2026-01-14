@@ -10,7 +10,7 @@ const connectDB = require("./config/db");
 const app = express();
 
 // Connect DB FIRST
-await connectDB();
+connectDB();
 
 // Middlewares
 app.use(cors());
