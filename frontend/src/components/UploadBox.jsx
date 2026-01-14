@@ -10,7 +10,7 @@ export default function UploadBox() {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://diagnos-reports-3xhe.vercel.app/api' || 'http://localhost:5000/api';
 
   const handleDragOver = (e) => {
     e.preventDefault();

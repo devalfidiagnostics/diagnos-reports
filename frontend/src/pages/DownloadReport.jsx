@@ -15,7 +15,7 @@ export default function DownloadReport() {
 
     try {
       setIsDownloading(true);
-      const res = await fetch("http://localhost:5000/api/report/find", {
+      const res = await fetch("https://diagnos-reports-3xhe.vercel.app/api/report/find", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mobile, dob })
