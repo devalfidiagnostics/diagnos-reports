@@ -8,7 +8,7 @@ export default function Login() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const navigate = useNavigate();
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://diagnos-reports-3xhe.vercel.app/api' || 'http://localhost:5000/api';
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://devalfidiagnostics-diagnos-reports.vercel.app/api' || 'http://localhost:5000/api';
 
   const handleLogin = async () => {
     if (!email || !password) {
