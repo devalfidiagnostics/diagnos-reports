@@ -3,7 +3,7 @@ const Report = require("../models/Report");
 
 exports.uploadReports = async (req, res) => {
   try {
-    const { mobile, dob } = req.body;
+    const { name, email, mobile, dob } = req.body;
 
     if (!mobile || !dob || !req.file) {
       return res.status(400).json({
@@ -34,6 +34,8 @@ exports.uploadReports = async (req, res) => {
 
 
     await Report.create({
+      name,
+      email,
       mobile,
       dob,
       fileUrl: data.publicUrl

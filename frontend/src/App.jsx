@@ -5,6 +5,7 @@ import Landing from "./pages/Landing";
 import './App.css'
 import Login from './pages/Login';
 import DownloadReport from './pages/DownloadReport';
+import ReportsList from './pages/ReportsList';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -20,6 +21,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Landing />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/reports-list" 
+            element={
+              <ProtectedRoute>
+                <ReportsList />
               </ProtectedRoute>
             } 
           />

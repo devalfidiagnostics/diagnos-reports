@@ -3,16 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [logoError, setLogoError] = useState(false);
   const navigate = useNavigate();
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://devalfidiagnostics-diagnos-reports.vercel.app/api' || 'http://localhost:5000/api';
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      toast.error("Please fill in both email and password.");
+    if (!username) {
+      toast.error("Please enter username.");
+      return;
+    }
+    if (!password) {
+      toast.error("Please enter password.");
       return;
     }
 
@@ -21,7 +24,7 @@ export default function Login() {
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
@@ -58,7 +61,6 @@ export default function Login() {
                     src={logoPath}
                     alt="alfi Diagnostics Logo" 
                     className="h-16 w-16 md:h-20 md:w-20 object-contain"
-                    onError={() => setLogoError(true)}
                   />
                 ) : (
                   <div className="relative w-16 h-16 md:w-20 md:h-20">
@@ -99,8 +101,8 @@ export default function Login() {
                 <input
                   type="text"
                   placeholder="Enter your username"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       handleLogin();

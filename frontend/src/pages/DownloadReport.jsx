@@ -6,7 +6,7 @@ export default function DownloadReport() {
   const [mobile, setMobile] = useState("");
   const [dob, setDob] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
-
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const findReport = async () => {
     if (!mobile || !dob) {
       toast.error("Please fill in both mobile number and date of birth.");
@@ -15,7 +15,7 @@ export default function DownloadReport() {
 
     try {
       setIsDownloading(true);
-      const res = await fetch("https://devalfidiagnostics-diagnos-reports.vercel.app/api/report/find", {
+      const res = await fetch(`${BASE_URL}/report/find`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mobile, dob })
@@ -76,7 +76,7 @@ export default function DownloadReport() {
   return (
     <>
       <Header />
-      <div className="min-h-[87vh] bg-gradient-to-br from-gray-50 to-gray-100 py-8 md:py-12 px-4">
+      <div className="min-h-[87vh]  bg-gradient-to-br from-orange-50 via-white to-gray-50 py-8 md:py-12 px-4">
         <div className="flex justify-center items-center min-h-[calc(80vh-120px)]">
           <div className="w-full max-w-2xl">
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 md:p-8 space-y-6">

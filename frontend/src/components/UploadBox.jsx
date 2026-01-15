@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 
 export default function UploadBox() {
@@ -10,7 +11,23 @@ export default function UploadBox() {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://devalfidiagnostics-diagnos-reports.vercel.app/api' || 'http://localhost:5000/api';
+  const navigate = useNavigate();
+  const location = useLocation();
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  // Check if we're in edit mode
+  const editMode = location.state?.editMode || false;
+  const reportData = location.state?.reportData || null;
+
+  // Pre-fill form if in edit mode
+  useEffect(() => {
+    if (editMode && reportData) {
+      setName(reportData.name || "");
+      setEmail(reportData.email || "");
+      setMobile(reportData.mobile || "");
+      setDob(reportData.dob || "");
+    }
+  }, [editMode, reportData]);
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -55,8 +72,10 @@ export default function UploadBox() {
       toast.error("Please enter date of birth.");
       return;
     }
-    if (!file) {
-      toast.error("Please select a file (PDF only).");
+    
+    // File is required only when creating new report
+    if (!editMode && !file) {
+      toast.error("Please select a PDF file.");
       return;
     }
 
@@ -64,39 +83,95 @@ export default function UploadBox() {
       setIsUploading(true);
       const token = localStorage.getItem("token");
 
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("email", email);
-      formData.append("mobile", mobile);
-      formData.append("dob", dob);
-      formData.append("file", file);
+      if (editMode && reportData) {
+        // Update existing report
+        if (file) {
+          // If new file is uploaded, use multipart/form-data
+          const formData = new FormData();
+          formData.append("name", name);
+          formData.append("email", email);
+          formData.append("mobile", mobile);
+          formData.append("dob", dob);
+          formData.append("file", file);
+          formData.append("oldFileUrl", reportData.fileUrl); // Send old file URL for deletion
 
-      const res = await fetch(`${BASE_URL}/upload-report`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        body: formData
-      });
+          const res = await fetch(`${BASE_URL}/report/${reportData._id}`, {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`
+            },
+            body: formData
+          });
 
-      const data = await res.json();
-      
-      if (data?.success) {
-        setName('');
-        setEmail('');
-        setMobile('');
-        setDob('');
-        setFile(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+          const data = await res.json();
+          
+          if (data?.success) {
+            toast.success("Report updated successfully with new PDF!");
+            navigate("/reports-list");
+          } else {
+            toast.error(data.message || 'Unable to update report. Please try again later.');
+          }
+        } else {
+          // If no new file, just update the text fields
+          const res = await fetch(`${BASE_URL}/report/${reportData._id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name,
+              email,
+              mobile,
+              dob
+            })
+          });
+
+          const data = await res.json();
+          
+          if (data?.success) {
+            toast.success("Report details updated successfully!");
+            navigate("/reports-list");
+          } else {
+            toast.error(data.message || 'Unable to update report. Please try again later.');
+          }
         }
-        toast.success(data.message);
       } else {
-        toast.error(data.message || 'Unable to upload file. Please try again later.');
+        // Create new report
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("email", email);
+        formData.append("mobile", mobile);
+        formData.append("dob", dob);
+        formData.append("file", file);
+
+        const res = await fetch(`${BASE_URL}/upload-report`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        const data = await res.json();
+        
+        if (data?.success) {
+          setName('');
+          setEmail('');
+          setMobile('');
+          setDob('');
+          setFile(null);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+          toast.success(data.message);
+        } else {
+          toast.error(data.message || 'Unable to upload file. Please try again later.');
+        }
       }
     } catch (error) {
-      console.log('ERROR while uploading reports:', error);
-      toast.error('Failed to upload file! Something went wrong.');
+      console.log('ERROR while uploading/updating reports:', error);
+      toast.error('Failed to save report! Something went wrong.');
     } finally {
       setIsUploading(false);
     }
@@ -109,12 +184,20 @@ export default function UploadBox() {
         <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
           <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
             <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              {editMode ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              )}
             </svg>
           </div>
           <div>
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Upload PDF Report</h2>
-            <p className="text-sm text-gray-500">Fill in the details and upload report</p>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+              {editMode ? "Edit Report Details" : "Upload PDF Report"}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {editMode ? "Update the report information" : "Fill in the details and upload report"}
+            </p>
           </div>
         </div>
 
@@ -178,7 +261,8 @@ export default function UploadBox() {
           {/* File Upload Section */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              PDF Report <span className="text-red-500">*</span>
+              PDF Report {!editMode && <span className="text-red-500">*</span>}
+              {editMode && <span className="text-sm text-gray-500 font-normal ml-2">(Optional - leave empty to keep current file)</span>}
             </label>
             <div
               onDragOver={handleDragOver}
@@ -244,6 +328,27 @@ export default function UploadBox() {
               )}
             </div>
           </div>
+
+          {/* Show existing PDF info in edit mode */}
+          {editMode && reportData && !file && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">Current PDF File</p>
+                  <p className="text-blue-700">A PDF file is already uploaded. You can replace it by uploading a new file, or leave it unchanged.</p>
+                  <button
+                    onClick={() => window.open(reportData.fileUrl, "_blank")}
+                    className="mt-2 text-blue-600 hover:text-blue-700 font-medium underline"
+                  >
+                    View Current PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Submit Button */}
@@ -263,11 +368,35 @@ export default function UploadBox() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span>Uploading...</span>
+                <span>{editMode ? "Updating..." : "Uploading..."}</span>
               </span>
             ) : (
-              "Upload PDF Report"
+              editMode ? "Update Report Details" : "Upload PDF Report"
             )}
+          </button>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="pt-2 flex space-x-3">
+          {editMode && (
+            <button
+              onClick={() => navigate("/reports-list")}
+              className="flex-1 py-3 px-6 rounded-lg font-medium text-gray-700 border-2 border-gray-300 hover:bg-gray-50 transition-all flex items-center justify-center space-x-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>Cancel</span>
+            </button>
+          )}
+          <button
+            onClick={() => navigate("/reports-list")}
+            className={`${editMode ? 'flex-1' : 'w-full'} py-3 px-6 rounded-lg font-medium text-orange-600 border-2 border-orange-600 hover:bg-orange-50 transition-all flex items-center justify-center space-x-2`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>View All Reports</span>
           </button>
         </div>
       </div>
