@@ -19,7 +19,7 @@ export default function Header() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     toast.success("Logged out successfully");
-    navigate("/login");
+    navigate("/");
   };
 
   // Logo path - Vite will resolve this from src/assets/alfi-logo.png
